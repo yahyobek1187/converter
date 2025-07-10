@@ -30,10 +30,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user_lang = get_user_language(context)
     
-    # If no language is set, show language selection
-    if not user_lang or user_lang not in ['uz', 'en', 'ru']:
+    # Check if language was ever set (using a permanent flag)
+    language_ever_set = context.user_data.get('language_ever_set', False)
+    
+    # If no language was ever set, show language selection
+    if not language_ever_set:
         await show_language_selection(update, context)
         return
+    
+    # Use default language if somehow lost
+    if not user_lang or user_lang not in ['uz', 'en', 'ru']:
+        user_lang = 'en'  # Default fallback
     
     welcome_message = f"{get_text(user_lang, 'welcome_title')}\n\n{get_text(user_lang, 'welcome_text')}"
     

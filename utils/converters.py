@@ -237,7 +237,8 @@ class FileConverter:
                 elif target_format.lower() == 'png':
                     img.save(output_path, format='PNG', optimize=True)
                 elif target_format.lower() == 'webp':
-                    img.save(output_path, format='WEBP', quality=95, optimize=True)
+                    # Use high quality for WEBP to maintain image size and quality
+                    img.save(output_path, format='WEBP', quality=100, method=6, lossless=False)
                 else:
                     # Fallback for other formats
                     img.save(output_path, format=target_format.upper())

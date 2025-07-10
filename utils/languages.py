@@ -139,3 +139,4 @@ def set_user_language(context, language: str) -> None:
     """Set user's preferred language in context."""
     if language in LANGUAGES:
         context.user_data['language'] = language
+        context.user_data['language_ever_set'] = True  # Mark that language was set

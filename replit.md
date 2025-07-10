@@ -4,7 +4,7 @@ This repository contains a fully functional Telegram bot that provides file conv
 
 **Status**: ✅ Bot is running successfully with multilingual support and enhanced menu-based interface.
 
-**Recent Update**: Implemented intelligent language selection system where users select language only on first use via /start, and can later change language using /language command. Fixed WEBP conversion errors, added audio/video file handlers, and enhanced all user interfaces with proper language support.
+**Recent Update**: Enhanced WEBP conversion with maximum quality settings (quality=100, method=6) to maintain original image size. Implemented permanent language selection system - once language is set, it never shows language selection again, even on /start. Users can only change language via /language command.
 
 # User Preferences
 
