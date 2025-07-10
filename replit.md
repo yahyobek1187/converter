@@ -2,11 +2,14 @@
 
 This repository contains a fully functional Telegram bot that provides file conversion services. The bot allows users to convert files between various formats including PDF/DOCX/TXT documents, image formats (JPG/PNG/WEBP), audio formats (MP3/WAV/OGG), and video to audio conversion (MP4 to MP3). 
 
-**Status**: ✅ Bot is running successfully and actively handling user requests.
+**Status**: ✅ Bot is running successfully with enhanced menu-based interface.
+
+**Recent Update**: Added comprehensive menu system where users first select file type, then choose conversion format for better user experience.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Interface preference: Menu-based navigation with step-by-step guidance for file conversions.
 
 # System Architecture
 
