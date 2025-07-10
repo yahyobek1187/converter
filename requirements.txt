@@ -3,3 +3,4 @@ python-dotenv
 moviepy
 docx
 pdf2docx
+pydub
