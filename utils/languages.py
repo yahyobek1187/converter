@@ -38,7 +38,7 @@ LANGUAGES = {
         'help_method1': '**1-usul: Menyu tizimi (Tavsiya etiladi)**\n1. Asosiy menyuni ochish uchun /start buyrug\'ini ishlating\n2. Fayl turingizni tanlang (Hujjatlar, Rasmlar, Audio, Video)\n3. Konvertatsiya qilmoqchi bo\'lgan manba formatni tanlang\n4. Nishon formatni tanlang\n5. Faylingizni yuboring va natijani oling!',
         'help_method2': '**2-usul: To\'g\'ridan-to\'g\'ri yuklash**\n1. Qo\'llab-quvvatlanadigan faylni to\'g\'ridan-to\'g\'ri yuboring\n2. Tugmalardan konvertatsiya formatini tanlang\n3. Konvertatsiya qilingan faylni yuklab oling!',
         'help_formats': '**Qo\'llab-quvvatlanadigan formatlar:**\n📄 Hujjatlar: PDF, DOCX, TXT\n🖼️ Rasmlar: JPG, PNG, WEBP\n🎵 Audio: MP3, WAV, OGG\n🎬 Video: MP4 → MP3',
-        'help_tips': '**Maslahatlar:**\n• Menyu tizimi qadam-ba-qadam yo\'l-yo\'riq beradi\n• Fayllar konvertatsiyadan keyin avtomatik o\'chiriladi\n• Konvertatsiya katta fayllar uchun biroz vaqt olishi mumkin',
+        'help_tips': '**Maslahatlar:**\n• Menyu tizimi qadam-ba-qadam yo\'l-yo\'riq beradi\n• Fayllar konvertatsiyadan keyin avtomatik o\'chiriladi\n• Konvertatsiya katta fayllar uchun biroz vaqt olishi mumkin\n• Tilni o\'zgartirish uchun /language buyrug\'ini ishlating',
         'select_language': '🌐 **Tilni tanlang / Select Language / Выберите язык:**'
     },
     
@@ -76,7 +76,7 @@ LANGUAGES = {
         'help_method1': '**Method 1: Menu System (Recommended)**\n1. Use /start to open the main menu\n2. Choose your file type (Documents, Images, Audio, Video)\n3. Select the source format you want to convert from\n4. Choose the target format you want to convert to\n5. Send your file and get the converted result!',
         'help_method2': '**Method 2: Direct Upload**\n1. Send any supported file directly\n2. Choose conversion format from the buttons\n3. Download your converted file!',
         'help_formats': '**Supported formats:**\n📄 Documents: PDF, DOCX, TXT\n🖼️ Images: JPG, PNG, WEBP\n🎵 Audio: MP3, WAV, OGG\n🎬 Video: MP4 → MP3',
-        'help_tips': '**Tips:**\n• Menu system provides step-by-step guidance\n• Files are automatically deleted after conversion\n• Conversion may take a few moments for large files',
+        'help_tips': '**Tips:**\n• Menu system provides step-by-step guidance\n• Files are automatically deleted after conversion\n• Conversion may take a few moments for large files\n• Use /language command to change language',
         'select_language': '🌐 **Select Language / Tilni tanlang / Выберите язык:**'
     },
     
@@ -114,7 +114,7 @@ LANGUAGES = {
         'help_method1': '**Метод 1: Система Меню (Рекомендуется)**\n1. Используйте /start для открытия главного меню\n2. Выберите тип файла (Документы, Изображения, Аудио, Видео)\n3. Выберите исходный формат для конвертации\n4. Выберите целевой формат\n5. Отправьте файл и получите результат!',
         'help_method2': '**Метод 2: Прямая Загрузка**\n1. Отправьте любой поддерживаемый файл напрямую\n2. Выберите формат конвертации из кнопок\n3. Скачайте конвертированный файл!',
         'help_formats': '**Поддерживаемые форматы:**\n📄 Документы: PDF, DOCX, TXT\n🖼️ Изображения: JPG, PNG, WEBP\n🎵 Аудио: MP3, WAV, OGG\n🎬 Видео: MP4 → MP3',
-        'help_tips': '**Советы:**\n• Система меню предоставляет пошаговое руководство\n• Файлы автоматически удаляются после конвертации\n• Конвертация может занять некоторое время для больших файлов',
+        'help_tips': '**Советы:**\n• Система меню предоставляет пошаговое руководство\n• Файлы автоматически удаляются после конвертации\n• Конвертация может занять некоторое время для больших файлов\n• Используйте команду /language для смены языка',
         'select_language': '🌐 **Выберите язык / Select Language / Tilni tanlang:**'
     }
 }
@@ -133,7 +133,7 @@ def get_text(user_lang: str, key: str, **kwargs) -> str:
 
 def get_user_language(context) -> str:
     """Get user's preferred language from context."""
-    return context.user_data.get('language', 'en')
+    return context.user_data.get('language', None)
 
 def set_user_language(context, language: str) -> None:
     """Set user's preferred language in context."""

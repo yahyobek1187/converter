@@ -4,7 +4,7 @@ This repository contains a fully functional Telegram bot that provides file conv
 
 **Status**: ✅ Bot is running successfully with multilingual support and enhanced menu-based interface.
 
-**Recent Update**: Added complete multilingual support (Uzbek, English, Russian), fixed WEBP conversion errors, added audio/video file handlers, and enhanced all user interfaces with proper language support.
+**Recent Update**: Implemented intelligent language selection system where users select language only on first use via /start, and can later change language using /language command. Fixed WEBP conversion errors, added audio/video file handlers, and enhanced all user interfaces with proper language support.
 
 # User Preferences
 
@@ -40,7 +40,7 @@ The application follows a simple modular architecture with clear separation of c
 - Provides user-friendly interface with inline keyboards for conversion options
 - Manages the conversation flow and file handling for documents, images, audio, and video files
 - Includes proper error handling and user feedback in user's preferred language
-- Features automatic language detection and selection on first use
+- Features intelligent language selection: shows language menu only on first /start, then uses /language command for changes
 
 ## File Converter (`utils/converters.py`)
 - Centralized conversion logic with support for multiple file formats

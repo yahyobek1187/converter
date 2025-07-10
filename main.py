@@ -37,14 +37,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     welcome_message = f"{get_text(user_lang, 'welcome_title')}\n\n{get_text(user_lang, 'welcome_text')}"
     
-    # Create main menu keyboard
+    # Create main menu keyboard without language button
     keyboard = [
         [InlineKeyboardButton(get_text(user_lang, 'documents'), callback_data="menu_documents")],
         [InlineKeyboardButton(get_text(user_lang, 'images'), callback_data="menu_images")],
         [InlineKeyboardButton(get_text(user_lang, 'audio'), callback_data="menu_audio")],
         [InlineKeyboardButton(get_text(user_lang, 'video'), callback_data="menu_video")],
-        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")],
-        [InlineKeyboardButton(get_text(user_lang, 'language'), callback_data="select_language")]
+        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -87,6 +86,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(help_text, reply_markup=reply_markup, parse_mode='Markdown')
+
+async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send language selection when the command /language is issued."""
+    await show_language_selection(update, context)
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle uploaded documents."""
@@ -168,9 +171,7 @@ async def handle_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # Redirect to main menu
             await start_menu(update, context)
             return
-        elif query.data == "select_language":
-            await show_language_selection(update, context)
-            return
+
         
         if query.data == "menu_documents":
             message = get_text(user_lang, 'document_conversion')
@@ -239,8 +240,7 @@ async def start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         [InlineKeyboardButton(get_text(user_lang, 'images'), callback_data="menu_images")],
         [InlineKeyboardButton(get_text(user_lang, 'audio'), callback_data="menu_audio")],
         [InlineKeyboardButton(get_text(user_lang, 'video'), callback_data="menu_video")],
-        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")],
-        [InlineKeyboardButton(get_text(user_lang, 'language'), callback_data="select_language")]
+        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -608,6 +608,7 @@ def main() -> None:
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("language", language_command))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.AUDIO, handle_audio))
