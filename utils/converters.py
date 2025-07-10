@@ -227,9 +227,20 @@ class FileConverter:
                     background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                     img = background
                 
-                # Save in target format
-                save_format = 'JPEG' if target_format.lower() in ['jpg', 'jpeg'] else target_format.upper()
-                img.save(output_path, format=save_format, quality=95 if save_format == 'JPEG' else None)
+                # For WEBP, ensure compatibility
+                elif target_format.lower() == 'webp' and img.mode in ('P',):
+                    img = img.convert('RGBA')
+                
+                # Save in target format with appropriate options
+                if target_format.lower() in ['jpg', 'jpeg']:
+                    img.save(output_path, format='JPEG', quality=95, optimize=True)
+                elif target_format.lower() == 'png':
+                    img.save(output_path, format='PNG', optimize=True)
+                elif target_format.lower() == 'webp':
+                    img.save(output_path, format='WEBP', quality=95, optimize=True)
+                else:
+                    # Fallback for other formats
+                    img.save(output_path, format=target_format.upper())
             
             return output_path if os.path.exists(output_path) else None
             

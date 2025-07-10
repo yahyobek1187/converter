@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from utils.converters import FileConverter, get_supported_conversions, cleanup_temp_files
+from utils.languages import get_text, get_user_language, set_user_language
 
 # Load environment variables
 load_dotenv()
@@ -27,57 +28,62 @@ converter = FileConverter()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
-    welcome_message = """
-🤖 **File Converter Bot**
-
-Welcome! I can help you convert files between different formats.
-
-**Choose an option:**
-"""
+    user_lang = get_user_language(context)
+    
+    # If no language is set, show language selection
+    if not user_lang or user_lang not in ['uz', 'en', 'ru']:
+        await show_language_selection(update, context)
+        return
+    
+    welcome_message = f"{get_text(user_lang, 'welcome_title')}\n\n{get_text(user_lang, 'welcome_text')}"
     
     # Create main menu keyboard
     keyboard = [
-        [InlineKeyboardButton("📄 Documents", callback_data="menu_documents")],
-        [InlineKeyboardButton("🖼️ Images", callback_data="menu_images")],
-        [InlineKeyboardButton("🎵 Audio", callback_data="menu_audio")],
-        [InlineKeyboardButton("🎬 Video", callback_data="menu_video")],
-        [InlineKeyboardButton("📤 Send File Directly", callback_data="menu_direct")]
+        [InlineKeyboardButton(get_text(user_lang, 'documents'), callback_data="menu_documents")],
+        [InlineKeyboardButton(get_text(user_lang, 'images'), callback_data="menu_images")],
+        [InlineKeyboardButton(get_text(user_lang, 'audio'), callback_data="menu_audio")],
+        [InlineKeyboardButton(get_text(user_lang, 'video'), callback_data="menu_video")],
+        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")],
+        [InlineKeyboardButton(get_text(user_lang, 'language'), callback_data="select_language")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(welcome_message, reply_markup=reply_markup, parse_mode='Markdown')
 
+async def show_language_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show language selection menu."""
+    message = get_text('en', 'select_language')
+    
+    keyboard = [
+        [InlineKeyboardButton("🇺🇿 O'zbek", callback_data="lang_uz")],
+        [InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")],
+        [InlineKeyboardButton("🇷🇺 Русский", callback_data="lang_ru")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if update.message:
+        await update.message.reply_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+    else:
+        query = update.callback_query
+        await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
-    help_text = """
-**How to use:**
+    user_lang = get_user_language(context)
+    
+    help_text = f"""{get_text(user_lang, 'help_title')}
 
-**Method 1: Menu System (Recommended)**
-1. Use /start to open the main menu
-2. Choose your file type (Documents, Images, Audio, Video)
-3. Select the source format you want to convert from
-4. Choose the target format you want to convert to
-5. Send your file and get the converted result!
+{get_text(user_lang, 'help_method1')}
 
-**Method 2: Direct Upload**
-1. Send any supported file directly
-2. Choose conversion format from the buttons
-3. Download your converted file!
+{get_text(user_lang, 'help_method2')}
 
-**Supported formats:**
-📄 Documents: PDF, DOCX, TXT
-🖼️ Images: JPG, PNG, WEBP
-🎵 Audio: MP3, WAV, OGG
-🎬 Video: MP4 → MP3
+{get_text(user_lang, 'help_formats')}
 
-**Tips:**
-• Menu system provides step-by-step guidance
-• Files are automatically deleted after conversion
-• Conversion may take a few moments for large files
+{get_text(user_lang, 'help_tips')}
     """
     
     # Add back to menu button
-    keyboard = [[InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]]
+    keyboard = [[InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(help_text, reply_markup=reply_markup, parse_mode='Markdown')
@@ -85,9 +91,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle uploaded documents."""
     try:
+        user_lang = get_user_language(context)
         document = update.message.document
         if not document:
-            await update.message.reply_text("❌ No document found in the message.")
+            await update.message.reply_text(get_text(user_lang, 'error_occurred'))
             return
 
         # Get file extension
@@ -95,7 +102,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         file_extension = os.path.splitext(file_name)[1].lower()
         
         if not file_extension:
-            await update.message.reply_text("❌ Cannot determine file type. Please ensure your file has an extension.")
+            await update.message.reply_text(get_text(user_lang, 'file_type_error'))
             return
 
         # Check if user has selected target format from menu
@@ -116,8 +123,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         
         if not supported_formats:
             await update.message.reply_text(
-                f"❌ Sorry, I don't support conversion for {file_extension} files yet.\n\n"
-                "Supported formats: PDF, DOCX, TXT, JPG, PNG, WEBP, MP3, WAV, OGG, MP4"
+                get_text(user_lang, 'unsupported_format', ext=file_extension[1:].upper())
             )
             return
 
@@ -130,21 +136,22 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 callback_data=callback_data
             )])
         
-        keyboard.append([InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")])
+        keyboard.append([InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            f"📁 **File received:** {file_name}\n"
-            f"📊 **Size:** {document.file_size / 1024:.1f} KB\n"
-            f"🔧 **Type:** {file_extension[1:].upper()}\n\n"
-            "Choose conversion format:",
+            get_text(user_lang, 'file_received', 
+                    name=file_name, 
+                    size=document.file_size / 1024, 
+                    type=file_extension[1:].upper()),
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
         
     except Exception as e:
         logger.error(f"Error handling document: {e}")
-        await update.message.reply_text("❌ An error occurred while processing your file. Please try again.")
+        user_lang = get_user_language(context)
+        await update.message.reply_text(get_text(user_lang, 'error_occurred'))
 
 async def handle_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle menu selections."""
@@ -152,87 +159,62 @@ async def handle_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await query.answer()
     
     try:
+        user_lang = get_user_language(context)
+        
+        # Handle language selection
+        if query.data.startswith('lang_'):
+            lang_code = query.data.replace('lang_', '')
+            set_user_language(context, lang_code)
+            # Redirect to main menu
+            await start_menu(update, context)
+            return
+        elif query.data == "select_language":
+            await show_language_selection(update, context)
+            return
+        
         if query.data == "menu_documents":
-            message = """
-📄 **Document Conversion**
-
-Choose the format you want to convert:
-"""
+            message = get_text(user_lang, 'document_conversion')
             keyboard = [
                 [InlineKeyboardButton("PDF → DOCX/TXT", callback_data="type_pdf")],
                 [InlineKeyboardButton("DOCX → PDF/TXT", callback_data="type_docx")],
                 [InlineKeyboardButton("TXT → DOCX", callback_data="type_txt")],
-                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+                [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
             ]
             
         elif query.data == "menu_images":
-            message = """
-🖼️ **Image Conversion**
-
-Choose the format you want to convert:
-"""
+            message = get_text(user_lang, 'image_conversion')
             keyboard = [
                 [InlineKeyboardButton("JPG → PNG/WEBP", callback_data="type_jpg")],
                 [InlineKeyboardButton("PNG → JPG/WEBP", callback_data="type_png")],
                 [InlineKeyboardButton("WEBP → JPG/PNG", callback_data="type_webp")],
-                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+                [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
             ]
             
         elif query.data == "menu_audio":
-            message = """
-🎵 **Audio Conversion**
-
-Choose the format you want to convert:
-"""
+            message = get_text(user_lang, 'audio_conversion')
             keyboard = [
                 [InlineKeyboardButton("MP3 → WAV/OGG", callback_data="type_mp3")],
                 [InlineKeyboardButton("WAV → MP3/OGG", callback_data="type_wav")],
                 [InlineKeyboardButton("OGG → MP3/WAV", callback_data="type_ogg")],
-                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+                [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
             ]
             
         elif query.data == "menu_video":
-            message = """
-🎬 **Video Conversion**
-
-Choose the format you want to convert:
-"""
+            message = get_text(user_lang, 'video_conversion')
             keyboard = [
                 [InlineKeyboardButton("MP4 → MP3", callback_data="type_mp4")],
-                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+                [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
             ]
             
         elif query.data == "menu_direct":
-            message = """
-📤 **Direct File Upload**
-
-Simply send me any supported file and I'll show you conversion options:
-
-**Supported formats:**
-📄 PDF, DOCX, TXT
-🖼️ JPG, PNG, WEBP
-🎵 MP3, WAV, OGG
-🎬 MP4
-"""
+            message = get_text(user_lang, 'direct_upload')
             keyboard = [
-                [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+                [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
             ]
             
         elif query.data == "back_menu":
-            message = """
-🤖 **File Converter Bot**
-
-Welcome! I can help you convert files between different formats.
-
-**Choose an option:**
-"""
-            keyboard = [
-                [InlineKeyboardButton("📄 Documents", callback_data="menu_documents")],
-                [InlineKeyboardButton("🖼️ Images", callback_data="menu_images")],
-                [InlineKeyboardButton("🎵 Audio", callback_data="menu_audio")],
-                [InlineKeyboardButton("🎬 Video", callback_data="menu_video")],
-                [InlineKeyboardButton("📤 Send File Directly", callback_data="menu_direct")]
-            ]
+            await start_menu(update, context)
+            return
             
         else:
             # Handle file type selection
@@ -244,7 +226,28 @@ Welcome! I can help you convert files between different formats.
         
     except Exception as e:
         logger.error(f"Error handling menu: {e}")
-        await query.edit_message_text("❌ An error occurred. Please try again.")
+        user_lang = get_user_language(context)
+        await query.edit_message_text(get_text(user_lang, 'error_occurred'))
+
+async def start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show the main menu."""
+    user_lang = get_user_language(context)
+    message = f"{get_text(user_lang, 'welcome_title')}\n\n{get_text(user_lang, 'welcome_text')}"
+    
+    keyboard = [
+        [InlineKeyboardButton(get_text(user_lang, 'documents'), callback_data="menu_documents")],
+        [InlineKeyboardButton(get_text(user_lang, 'images'), callback_data="menu_images")],
+        [InlineKeyboardButton(get_text(user_lang, 'audio'), callback_data="menu_audio")],
+        [InlineKeyboardButton(get_text(user_lang, 'video'), callback_data="menu_video")],
+        [InlineKeyboardButton(get_text(user_lang, 'send_direct'), callback_data="menu_direct")],
+        [InlineKeyboardButton(get_text(user_lang, 'language'), callback_data="select_language")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if update.callback_query:
+        await update.callback_query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+    else:
+        await update.message.reply_text(message, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def handle_file_type_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle file type selection and show target format options."""
@@ -323,7 +326,26 @@ Please send your {source_format.upper()} file now and I'll convert it to {target
             target_format = data_parts[2]
             file_id = context.user_data.get('photo_file_id')
             if not file_id:
-                await query.edit_message_text("❌ Photo file not found. Please send the photo again.")
+                user_lang = get_user_language(context)
+                await query.edit_message_text(get_text(user_lang, 'photo_not_found'))
+                return
+        # Handle audio conversions
+        elif len(data_parts) == 3 and data_parts[0] == 'convert' and data_parts[1] == 'audio':
+            source_format = context.user_data.get('audio_source_format', 'mp3')
+            target_format = data_parts[2]
+            file_id = context.user_data.get('audio_file_id')
+            if not file_id:
+                user_lang = get_user_language(context)
+                await query.edit_message_text(get_text(user_lang, 'start_over'))
+                return
+        # Handle video conversions
+        elif len(data_parts) == 3 and data_parts[0] == 'convert' and data_parts[1] == 'video':
+            source_format = 'mp4'
+            target_format = data_parts[2]
+            file_id = context.user_data.get('video_file_id')
+            if not file_id:
+                user_lang = get_user_language(context)
+                await query.edit_message_text(get_text(user_lang, 'start_over'))
                 return
         # Handle document conversions
         elif len(data_parts) == 4 and data_parts[0] == 'convert':
@@ -336,9 +358,9 @@ Please send your {source_format.upper()} file now and I'll convert it to {target
             return
         
         # Update message to show processing
+        user_lang = get_user_language(context)
         await query.edit_message_text(
-            f"🔄 Converting from {source_format.upper()} to {target_format.upper()}...\n"
-            "Please wait, this may take a moment."
+            get_text(user_lang, 'converting', source=source_format.upper(), target=target_format.upper())
         )
         
         # Download file from Telegram
@@ -350,7 +372,8 @@ Please send your {source_format.upper()} file now and I'll convert it to {target
         output_path = await converter.convert_file(input_path, source_format, target_format)
         
         if not output_path or not os.path.exists(output_path):
-            await query.edit_message_text("❌ Conversion failed. Please try again with a different file.")
+            user_lang = get_user_language(context)
+            await query.edit_message_text(get_text(user_lang, 'conversion_failed'))
             return
         
         # Send converted file
@@ -363,10 +386,9 @@ Please send your {source_format.upper()} file now and I'll convert it to {target
                 caption=f"✅ Successfully converted to {target_format.upper()}!"
             )
         
+        user_lang = get_user_language(context)
         await query.edit_message_text(
-            f"✅ **Conversion completed!**\n"
-            f"📁 {source_format.upper()} → {target_format.upper()}\n"
-            f"📤 File sent above.",
+            get_text(user_lang, 'conversion_completed', source=source_format.upper(), target=target_format.upper()),
             parse_mode='Markdown'
         )
         
@@ -393,9 +415,9 @@ async def convert_file_now(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     """Convert file immediately after menu selection."""
     try:
         # Send processing message
+        user_lang = get_user_language(context)
         processing_message = await update.message.reply_text(
-            f"🔄 Converting from {source_format.upper()} to {target_format.upper()}...\n"
-            "Please wait, this may take a moment."
+            get_text(user_lang, 'converting', source=source_format.upper(), target=target_format.upper())
         )
         
         # Download file from Telegram
@@ -407,7 +429,7 @@ async def convert_file_now(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         output_path = await converter.convert_file(input_path, source_format, target_format)
         
         if not output_path or not os.path.exists(output_path):
-            await processing_message.edit_text("❌ Conversion failed. Please try again with a different file.")
+            await processing_message.edit_text(get_text(user_lang, 'conversion_failed'))
             return
         
         # Send converted file
@@ -421,9 +443,7 @@ async def convert_file_now(update: Update, context: ContextTypes.DEFAULT_TYPE, s
             )
         
         await processing_message.edit_text(
-            f"✅ **Conversion completed!**\n"
-            f"📁 {source_format.upper()} → {target_format.upper()}\n"
-            f"📤 File sent above.",
+            get_text(user_lang, 'conversion_completed', source=source_format.upper(), target=target_format.upper()),
             parse_mode='Markdown'
         )
         
@@ -433,9 +453,8 @@ async def convert_file_now(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         
     except Exception as e:
         logger.error(f"Error during conversion: {e}")
-        await update.message.reply_text(
-            "❌ Conversion failed due to an error. Please ensure your file is valid and try again."
-        )
+        user_lang = get_user_language(context)
+        await update.message.reply_text(get_text(user_lang, 'conversion_failed'))
         
         # Attempt cleanup even on error
         try:
@@ -462,25 +481,121 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         
         # Create inline keyboard for photo conversion
         # Store the file_id in context to avoid callback_data length limits
+        user_lang = get_user_language(context)
         context.user_data['photo_file_id'] = photo.file_id
         keyboard = [
             [InlineKeyboardButton("Convert to PNG", callback_data="convert_photo_png")],
             [InlineKeyboardButton("Convert to WEBP", callback_data="convert_photo_webp")],
-            [InlineKeyboardButton("🔙 Back to Menu", callback_data="back_menu")]
+            [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            f"📷 **Photo received!**\n"
-            f"📊 **Size:** {photo.file_size / 1024:.1f} KB\n\n"
-            "Choose conversion format:",
+            get_text(user_lang, 'photo_received', size=photo.file_size / 1024),
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
         
     except Exception as e:
         logger.error(f"Error handling photo: {e}")
-        await update.message.reply_text("❌ An error occurred while processing your photo. Please try again.")
+        user_lang = get_user_language(context)
+        await update.message.reply_text(get_text(user_lang, 'error_occurred'))
+
+async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle uploaded audio files."""
+    try:
+        user_lang = get_user_language(context)
+        audio = update.message.audio or update.message.voice
+        
+        if not audio:
+            await update.message.reply_text(get_text(user_lang, 'error_occurred'))
+            return
+        
+        # Check if user has selected target format from menu
+        selected_file_type = context.user_data.get('selected_file_type')
+        target_format = context.user_data.get('target_format')
+        
+        if selected_file_type and target_format and selected_file_type in ['mp3', 'wav', 'ogg']:
+            # User sent the expected audio type, proceed with conversion
+            await convert_file_now(update, context, selected_file_type, target_format, audio.file_id)
+            return
+        
+        # Determine audio format from mime_type or file_name
+        source_format = 'mp3'  # Default
+        if audio.mime_type:
+            if 'wav' in audio.mime_type:
+                source_format = 'wav'
+            elif 'ogg' in audio.mime_type:
+                source_format = 'ogg'
+        
+        # Create inline keyboard for audio conversion
+        supported_formats = get_supported_conversions(f".{source_format}")
+        if not supported_formats:
+            await update.message.reply_text(get_text(user_lang, 'unsupported_format', ext=source_format))
+            return
+        
+        context.user_data['audio_file_id'] = audio.file_id
+        context.user_data['audio_source_format'] = source_format
+        
+        keyboard = []
+        for target_format in supported_formats:
+            keyboard.append([InlineKeyboardButton(
+                f"Convert to {target_format.upper()}", 
+                callback_data=f"convert_audio_{target_format}"
+            )])
+        
+        keyboard.append([InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            get_text(user_lang, 'audio_received', size=audio.file_size / 1024),
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error handling audio: {e}")
+        user_lang = get_user_language(context)
+        await update.message.reply_text(get_text(user_lang, 'error_occurred'))
+
+async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle uploaded video files."""
+    try:
+        user_lang = get_user_language(context)
+        video = update.message.video
+        
+        if not video:
+            await update.message.reply_text(get_text(user_lang, 'error_occurred'))
+            return
+        
+        # Check if user has selected target format from menu
+        selected_file_type = context.user_data.get('selected_file_type')
+        target_format = context.user_data.get('target_format')
+        
+        if selected_file_type and target_format and selected_file_type == 'mp4':
+            # User sent the expected video type, proceed with conversion
+            await convert_file_now(update, context, 'mp4', target_format, video.file_id)
+            return
+        
+        # Create inline keyboard for video conversion (only MP4 to MP3 supported)
+        context.user_data['video_file_id'] = video.file_id
+        
+        keyboard = [
+            [InlineKeyboardButton("Convert to MP3", callback_data="convert_video_mp3")],
+            [InlineKeyboardButton(get_text(user_lang, 'back_menu'), callback_data="back_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            get_text(user_lang, 'video_received', size=video.file_size / 1024),
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error handling video: {e}")
+        user_lang = get_user_language(context)
+        await update.message.reply_text(get_text(user_lang, 'error_occurred'))
 
 def main() -> None:
     """Start the bot."""
@@ -495,6 +610,9 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+    application.add_handler(MessageHandler(filters.VOICE, handle_audio))
     application.add_handler(CallbackQueryHandler(handle_conversion))
     
     # Run the bot

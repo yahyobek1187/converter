@@ -2,22 +2,24 @@
 
 This repository contains a fully functional Telegram bot that provides file conversion services. The bot allows users to convert files between various formats including PDF/DOCX/TXT documents, image formats (JPG/PNG/WEBP), audio formats (MP3/WAV/OGG), and video to audio conversion (MP4 to MP3). 
 
-**Status**: ✅ Bot is running successfully with enhanced menu-based interface.
+**Status**: ✅ Bot is running successfully with multilingual support and enhanced menu-based interface.
 
-**Recent Update**: Added comprehensive menu system where users first select file type, then choose conversion format for better user experience.
+**Recent Update**: Added complete multilingual support (Uzbek, English, Russian), fixed WEBP conversion errors, added audio/video file handlers, and enhanced all user interfaces with proper language support.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
 Interface preference: Menu-based navigation with step-by-step guidance for file conversions.
+Language requirements: Support for Uzbek, English, and Russian languages with automatic language selection on first use.
 
 # System Architecture
 
 The application follows a simple modular architecture with clear separation of concerns:
 
 ## Core Components
-- **Main Bot Application** (`main.py`): Contains the Telegram bot logic, command handlers, and user interaction flows
-- **Conversion Utilities** (`utils/converters.py`): Handles the actual file conversion operations between different formats
+- **Main Bot Application** (`main.py`): Contains the Telegram bot logic, command handlers, and user interaction flows with multilingual support
+- **Conversion Utilities** (`utils/converters.py`): Handles the actual file conversion operations between different formats with enhanced WEBP support
+- **Language Support** (`utils/languages.py`): Provides localization for Uzbek, English, and Russian languages
 - **Environment Configuration**: Uses environment variables for sensitive configuration like bot tokens
 
 ## Technology Stack
@@ -34,10 +36,11 @@ The application follows a simple modular architecture with clear separation of c
 # Key Components
 
 ## Telegram Bot Handler (`main.py`)
-- Implements command handlers for `/start` and `/help` commands
+- Implements command handlers for `/start` and `/help` commands with multilingual support
 - Provides user-friendly interface with inline keyboards for conversion options
-- Manages the conversation flow and file handling
-- Includes proper error handling and user feedback
+- Manages the conversation flow and file handling for documents, images, audio, and video files
+- Includes proper error handling and user feedback in user's preferred language
+- Features automatic language detection and selection on first use
 
 ## File Converter (`utils/converters.py`)
 - Centralized conversion logic with support for multiple file formats
