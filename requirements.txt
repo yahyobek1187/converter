@@ -4,4 +4,4 @@ moviepy
 docx
 pdf2docx
 pydub
-pyaudioop
+pyaudio
